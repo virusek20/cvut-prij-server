@@ -1,6 +1,6 @@
 'use strict';
 
-import { users, isTokenAdmin, loadCSV, loadJSON } from '../Stores/user.mjs';
+import { users, loadCSV, loadJSON } from '../Stores/user.mjs';
 import { addLog } from '../Stores/log.mjs';
 import { copyFileToUploads } from "../Util/fileUpload.mjs";
 
@@ -9,15 +9,8 @@ export function registerRoutes(server) {
     server.route({
         method: 'GET',
         path: '/api/user',
+        options: { auth: "admin" },
         handler: (request, h) => {
-            if (request.headers["authorization"] === undefined) {
-                return h.response({ message: "Malformed request, missing parameters", errCode: "malform" }).code(400);
-            }
-
-            if (!isTokenAdmin(request.headers["authorization"])) {
-                return h.response({ message: "Forbidden", errCode: "forbidden" }).code(403);
-            }
-
             return h.response(users)
         }
     });
@@ -26,14 +19,9 @@ export function registerRoutes(server) {
     server.route({
         method: 'POST',
         path: '/api/user/add',
+        options: { auth: "admin" },
         handler: (request, h) => {
-            if (request.headers["authorization"] === undefined) {
-                return h.response({ message: "Malformed request, missing parameters", errCode: "malform" }).code(400);
-            }
 
-            if (!isTokenAdmin(request.headers["authorization"])) {
-                return h.response({ message: "Forbidden", errCode: "forbidden" }).code(403);
-            }
         }
     });
 
@@ -41,14 +29,9 @@ export function registerRoutes(server) {
     server.route({
         method: 'POST',
         path: '/api/user/update',
+        options: { auth: "admin" },
         handler: (request, h) => {
-            if (request.headers["authorization"] === undefined) {
-                return h.response({ message: "Malformed request, missing parameters", errCode: "malform" }).code(400);
-            }
 
-            if (!isTokenAdmin(request.headers["authorization"])) {
-                return h.response({ message: "Forbidden", errCode: "forbidden" }).code(403);
-            }
         }
     });
 
@@ -56,21 +39,14 @@ export function registerRoutes(server) {
     server.route({
         method: 'POST',
         path: '/api/user/upload',
-        config: {
+        options : {
+            auth: "admin",
             payload: {
                 maxBytes: 10000000, // 10MB
                 output: 'file',
                 parse: true
             },
             handler: async (request, h) => {
-                if (request.headers["authorization"] === undefined) {
-                    return h.response({ message: "Malformed request, missing parameters", errCode: "malform" }).code(400);
-                }
-
-                if (!isTokenAdmin(request.headers["authorization"])) {
-                    return h.response({ message: "Invalid token", errCode: "invalidToken" }).code(403);
-                }
-
                 return copyFileToUploads(request.payload.path)
                 .then(target => {
                     try {

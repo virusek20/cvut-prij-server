@@ -30,7 +30,7 @@ class User {
     username = "";
     password = "";
     state = "";
-    token = "";
+    token = null;
     group = "Priviledged users";
     userType;
 

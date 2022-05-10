@@ -8,6 +8,7 @@
     "dev": "npx nodemon ./server.mjs localhost 3000"
   },
   "dependencies": {
+    "@hapi/boom": "^10.0.0",
     "@hapi/hapi": "^20.2.1",
     "commander": "^9.0.0",
     "csv-parser": "^3.0.0",

@@ -7,11 +7,15 @@ import { registerRoutes as userRoutes } from "./Routes/user.mjs";
 import { registerRoutes as logRoutes } from "./Routes/log.mjs";
 import { addLog } from './Stores/log.mjs';
 import { createRooms } from './WebRTC/webrtcServer.mjs';
+import { registerAuthStrategies } from './authStrategies.mjs';
 import "./Websocket/websocket.mjs";
 
 const init = async () => {
     const server = Hapi.server({ port: restPort });
 
+    await registerAuthStrategies(server);
+    server.auth.default("session");
+    
     authRoutes(server);
     userRoutes(server);
     logRoutes(server);
