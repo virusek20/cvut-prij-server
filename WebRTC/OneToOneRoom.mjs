@@ -4,6 +4,9 @@ import { getKurentoClient } from "./webrtcServer.mjs";
 import { addLog } from "../Stores/log.mjs";
 
 export default class OneToOneRoom {
+    /**
+     * @type {kurento.MediaPipeline}
+     */
     pipeline = null;
 
     peers = [ new SessionInfo(), new SessionInfo() ];
@@ -64,6 +67,7 @@ export default class OneToOneRoom {
         }
 
         connection.endpoint = await this.pipeline.create("WebRtcEndpoint");
+        connection.endpoint.setMaxVideoSendBandwidth(5000);
 
         // Only connect after we have both peers
         if (this.peers[0].endpoint !== undefined && this.peers[1].endpoint !== undefined)

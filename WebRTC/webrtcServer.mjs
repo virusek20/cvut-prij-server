@@ -27,12 +27,13 @@ export async function createRooms() {
     users.forEach(u => {
         if (u.userType === UserType.Applicant || u.userType === UserType.Interviewer)
         {
-            if (!u.isActive()) {
+            if (u.isActive() === false && rooms[u.username] !== undefined) {
+                addLog(`Removed one to one room for user '${u.username}'`, "info");
                 delete rooms[u.username];
                 return;
             }
 
-            if (rooms[u.username] === undefined) {
+            if (u.isActive() === true && rooms[u.username] === undefined) {
                 addLog(`Created one to one room for user '${u.username}'`, "info");
                 rooms[u.username] = new OneToOneRoom(u.username);
                 rooms[u.username].createRoom();

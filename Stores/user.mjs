@@ -27,6 +27,7 @@ export class UserType {
 }
 
 class User {
+    id = v4();
     username = "";
     password = "";
     state = "";
@@ -90,8 +91,8 @@ export function loadCSV(fileName) {
     const backupPath = join(backupFolder, `backup_${generateFilename()}`);
     saveJSON(backupPath);
 
-    fs.createReadStream(fileName)
-        .pipe(csv({
+    const stream = fs.createReadStream(fileName);
+    stream.pipe(csv({
             skipLines: 1,
             separator: ';',
             headers: ["name", "surname", "email", "country", "studyPlan", "date", "time", "username", "password"]
@@ -104,7 +105,11 @@ export function loadCSV(fileName) {
             delete data.date;
             delete data.time;
 
-            users.push({ ...(new Applicant()), ...data });
+            const user = Object.assign(new Applicant(), data);
+            users.push(user);
+        })
+        .on('end', () => {
+            stream.destroy();
         });
 
     return users;
@@ -119,7 +124,8 @@ export async function loadJSON(fileName) {
     saveJSON(backupPath);
 
     try {
-        const parsedUsers = JSON.parse(data);
+        const parsedUsers = JSON.parse(data)
+            .map(u => Object.assign(new Applicant(), u));
         users = [...users, ...parsedUsers];
 
         return parsedUsers;
@@ -165,13 +171,14 @@ defaultAdmin.password = adminPassword;
 const testSage = new User(UserType.Sage);
 testSage.username = "sage"; 
 testSage.password = "123";
+testSage.token = "asd";
 
 const testApp = new Applicant();
 testApp.name = "Petr"; 
 testApp.surname = "Vomáčka"; 
 testApp.username = "app"; 
 testApp.password = "123";
-testApp.active = "true";
+testApp.active = true;
 
 const testInt = new User(UserType.Interviewer);
 testInt.username = "int"; 

@@ -59,6 +59,7 @@ export default class OneToManyRoom {
         this.presenter.offer = offer;
         
         const endpoint = await this.pipeline.create("WebRtcEndpoint");
+        endpoint.setMaxVideoSendBandwidth(5000);
         this.presenter.endpoint = endpoint;
     
         // No need to add "pending" applicants, presenter always gets created first
@@ -93,11 +94,13 @@ export default class OneToManyRoom {
             
             this.peers[token].endpoint.removeAllListeners();
             this.peers[token].endpoint.release();
+            this.peers[token].endpoint = undefined;
         }
         else {
             addLog(`User (${token}) is joining the main SAGE room.`, "info")
         }
     
+        this.peers[token] = new SessionInfo(token, undefined, ws, offer);
         const endpoint = await this.pipeline.create("WebRtcEndpoint");
         endpoint.on("OnIceCandidate", e => {
             var candidate = kurento.getComplexType('IceCandidate')(e.candidate);
@@ -108,7 +111,7 @@ export default class OneToManyRoom {
             }));
         });
     
-        this.peers[token] = new SessionInfo(token, endpoint, ws, offer);
+        this.peers[token].endpoint = endpoint;
         const answer = await endpoint.processOffer(offer);
         this.presenter.endpoint.connect(endpoint);
         await endpoint.gatherCandidates();
@@ -124,7 +127,7 @@ export default class OneToManyRoom {
     async addIceCandidate(token, candidate) {
         const connection = this.getConnection(token);
         if (connection === undefined) {
-            addLog(`Attempted to add candidate to invalid connection (${this.roomName})`, "error");
+            addLog(`Attempted to add candidate to invalid connection (${this.roomName} - ${token})`, "error");
             return;
         }
 

@@ -31,6 +31,11 @@ export function addLog(text, severity) {
     const log = new Log(text, severity);
 
     console.log(`[${new Date().toLocaleTimeString()}] ${severityColor[severity] ?? severityColor.reset}${severity.toUpperCase()}\u001b[0m | ${text}`);
+    if (severity === "error") {
+        const myObject = {};
+        Error.captureStackTrace(myObject);
+        console.log(myObject.stack);
+    }
 
     logs.push(log);
     onLog(log);

@@ -1,11 +1,14 @@
 'use strict';
 
-import { users, loadCSV, loadJSON } from '../Stores/user.mjs';
+import { users, loadCSV, loadJSON, UserType } from '../Stores/user.mjs';
 import { addLog } from '../Stores/log.mjs';
 import { copyFileToUploads } from "../Util/fileUpload.mjs";
+import Boom from '@hapi/boom';
+import { createRooms } from '../WebRTC/webrtcServer.mjs';
+import { notifyCompleteSage } from '../Websocket/sage.mjs';
 
 export function registerRoutes(server) {
-    // Current aplicants
+    // Current users
     server.route({
         method: 'GET',
         path: '/api/user',
@@ -32,6 +35,46 @@ export function registerRoutes(server) {
         options: { auth: "admin" },
         handler: (request, h) => {
 
+        }
+    });
+
+    // Enable user
+    server.route({
+        method: 'POST',
+        path: '/api/user/enable',
+        options: { auth: "admin" },
+        handler: async (request, h) => {
+            const id = request.payload.id;
+            if (id === undefined) throw Boom.badRequest("No user specified");
+
+            const user = users.find(u => u.id === id);
+            if (user === undefined) throw Boom.notFound("Specified user does not exist");
+            if (user.userType !== UserType.Applicant) throw Boom.badRequest("Cannot enable a non-applicant user");
+            user.active = true;
+
+            await createRooms();
+            await notifyCompleteSage();
+            return h.response()
+        }
+    });
+
+    // Disable user
+    server.route({
+        method: 'POST',
+        path: '/api/user/disable',
+        options: { auth: "admin" },
+        handler: async (request, h) => {
+            const id = request.payload.id;
+            if (id === undefined) throw Boom.badRequest("No user specified");
+
+            const user = users.find(u => u.id === id);
+            if (user === undefined) throw Boom.notFound("Specified user does not exist");
+            if (user.userType !== UserType.Applicant) throw Boom.badRequest("Cannot disable a non-applicant user");
+            user.active = false;
+
+            await createRooms();
+            await notifyCompleteSage();
+            return h.response()
         }
     });
 

@@ -24,6 +24,25 @@ export async function notifySage(token, username, state) {
     });
 }
 
+export async function notifyCompleteSage() {
+    // Merge static data and state
+    const applicants = users
+    .filter(u => u.userType === UserType.Applicant && u.isActive)
+    .map(u => { 
+        return {...u, ...(states[u.token] ?? new ApplicantState()) };
+    });
+
+    users.filter(u => u.userType == UserType.Sage || u.userType == UserType.Interviewer)
+    .map(u => getSocketByToken(u.token))
+    .filter(ws => ws !== undefined)
+    .forEach(ws => {
+        ws.send(JSON.stringify({ 
+            command: "fullSageState", 
+            applicants 
+        }));
+    });
+}
+
 export async function applicantCommands(token, data, ws) {
     const applicant = findUserByToken(token);
 
@@ -119,16 +138,10 @@ export async function sageCommands(token, data, ws) {
             notifySage(data.target, applicant.username, states[data.target]);
             break;
         case "requestSageState":
-            // Merge static data and state
-            const applicants = users
-            .filter(u => u.userType === UserType.Applicant && u.isActive)
-            .map(u => { 
-                return {...u, ...(states[u.token] ?? new ApplicantState()) };
-            });
-
-            ws.send(JSON.stringify({ command: "fullSageState", applicants }));
+            await notifyCompleteSage();
             break;
         case "stop":
+            target.send(JSON.stringify({ command: "logout" }));
             target.send(JSON.stringify({ command: "pageChange", state: "/logout/examEnd" }));
             break;
         case "refresh":
@@ -146,10 +159,12 @@ export async function sageCommands(token, data, ws) {
             }
 
             states[data.target].interviewRoom = data.room;
+            states[data.target].markedInterview = false;
             if (data.room === "") states[data.target].seenState = SeenState.Seen;
             else states[data.target].seenState = SeenState.Interview;
 
             target.send(JSON.stringify({ command: "changeRoom", room: data.room }));
+            await notifySage(data.target, applicant.username, states[data.target]);
             break;
     }
 }

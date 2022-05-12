@@ -8,7 +8,7 @@ const uploadFolder = join(cwd(), "upload/");
 if (!existsSync(uploadFolder)) mkdirSync(uploadFolder);
 
 export function generateFilename() {
-    return new Date().toJSON().slice(0,10);
+    return Date.now().toString();
 }
 
 export function copyFileToUploads(filePath) {

@@ -75,6 +75,11 @@ wss.on('connection', (ws, req) => {
     ws.id = v4();
 
     addLog(`New websocket connection received from '${srcAddress}'`, "info");
+    const ping = setInterval(() => ws.ping(), 10000)
     ws.on('message', data => verifyMessage(ws, srcAddress, data));
-    ws.on('close', () => disconnect(ws))
+    ws.on('error', (e) => addLog(`Websocket error '${e}'`, "error"));
+    ws.on('close', (c, e) => {
+        clearInterval(ping);
+        disconnect(ws);
+    });
 });
